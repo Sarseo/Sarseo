@@ -1,0 +1,6 @@
+rapidfuzz>=3.9
+numpy>=1.26
+pytest>=8
+# ASR (optional for text-only checks):
+torch>=2.6
+transformers>=4.45
