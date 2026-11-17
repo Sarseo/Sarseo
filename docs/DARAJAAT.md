@@ -1,5 +1,13 @@
 # Anbindung an Darajaat (app.darajaat.de)
 
+## Ist-Stand Darajaat (geprüft am 2026-11-17)
+
+- Eigener Server hinter Caddy; `rk-shim.js` ersetzt die Claude-Artifact-APIs (`/api/db`, `/api/me`, `/api/auth`, `/api/assets`).
+- Rezitation ist schon da: `POST /api/asr` (WAV, Header `x-model: quran` bzw. `x-prompt`), Live-Modus über WebSocket `/api/live`.
+- Bewertungs-Pipeline für Admins: `/api/admin/learn` (gespeicherte Aufnahmen), `/judge` mit Fehlertypen **miss / sub / vowel / near** → das sind gelabelte Trainingsdaten.
+
+Sarseo ergänzt das also nicht als zweite App, sondern als **Engine hinter `/api/asr` / `/api/live`**: Quran-weite Stellensuche, Wort-Diff, Evaluierung und später Feinabstimmung auf den bewerteten Darajaat-Aufnahmen.
+
 Darajaat ist eine arabische Lernplattform (Ansichten: Schüler / Betreuer / wissenschaftlicher Prüfer; Quiz, Zertifikate). Sarseo liefert ihr ein **Tilāwa-/Hifẓ-Modul**: Rezitation prüfen, Fehler pro Wort, Fortschritt als Darajaat-Stufen.
 
 ## Schnittstelle (fertig, `server/app.py`)
@@ -16,13 +24,13 @@ Ohne `sura` findet die Engine die Stelle selbst. CORS ist für `https://app.dara
 {
   "span": "112:1–112:4",
   "accuracy": 0.93,
-  "counts": {"ok": 14, "sub": 1, "del": 0, "ins": 0},
+  "counts": {"ok": 14, "sub": 1, "miss": 0, "extra": 0},
   "heard": "…",
   "mistakes": [{"type": "sub", "ref": "112:4:5", "expected": "أَحَدٌ", "heard": "واحد"}]
 }
 ```
 
-`type`: `sub` = falsches Wort, `del` = ausgelassen, `ins` = zusätzlich. `ref` = Sure:Ayah:Wort.
+`type` wie in Darajaat: `sub` = مبدّلة, `miss` = متروكة, `extra` = زائدة (`vowel`/`near` folgen). `ref` = Sure:Ayah:Wort.
 
 ## Aufruf aus Darajaat (Browser)
 

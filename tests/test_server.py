@@ -21,4 +21,4 @@ def test_check_text_with_range_reports_missing():
     c = TestClient(app)
     r = c.post("/v1/check-text", json={"text": "قل هو الله احد", "sura": 112, "from": 1, "to": 2})
     d = r.json()
-    assert d["counts"]["del"] == 2 and d["mistakes"][0]["ref"] == "112:2:1"
+    assert d["counts"]["miss"] == 2 and d["mistakes"][0]["ref"] == "112:2:1"

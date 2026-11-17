@@ -6,6 +6,9 @@ from dataclasses import dataclass, field
 from .align import Op
 
 LABEL = {"ok": "richtig", "sub": "falsch", "del": "ausgelassen", "ins": "zusätzlich"}
+# Mistake type names used by Darajaat (app.darajaat.de): miss / sub / extra
+# ("vowel" = tashkeel error and "near" = unclear follow once the engine detects them).
+API_TYPE = {"sub": "sub", "del": "miss", "ins": "extra"}
 
 
 @dataclass
@@ -40,10 +43,10 @@ class Report:
         return {
             "span": self.span,
             "accuracy": round(self.accuracy, 3),
-            "counts": self.counts,
+            "counts": {"ok": self.counts["ok"], **{API_TYPE[k]: self.counts[k] for k in API_TYPE}},
             "heard": self.heard_text,
             "mistakes": [{
-                "type": o.kind,
+                "type": API_TYPE[o.kind],
                 "ref": f"{o.expected.sura}:{o.expected.aya}:{o.expected.pos}" if o.expected else None,
                 "expected": o.expected.text if o.expected else None,
                 "heard": o.heard,
