@@ -22,6 +22,9 @@ TANZIL_URL = (
 )
 
 
+BASMALA = ["بسم", "الله", "الرحمن", "الرحيم"]
+
+
 @dataclass(frozen=True)
 class Word:
     idx: int      # global position 0..N-1
@@ -63,7 +66,12 @@ def build_db(src: Path | None = None, db: Path = DB_PATH) -> Path:
     con.executemany("INSERT INTO ayah VALUES (?,?,?)", rows)
     words, idx = [], 0
     for s, a, text in rows:
-        for pos, tok in enumerate(tokenize(text), 1):
+        toks = tokenize(text)
+        # Tanzil prefixes the Basmala to aya 1 of every sura except 1 and 9;
+        # it is not part of the aya, so it is not indexed (display text keeps it).
+        if a == 1 and s not in (1, 9) and [normalize_word(t) for t in toks[:4]] == BASMALA:
+            toks = toks[4:]
+        for pos, tok in enumerate(toks, 1):
             words.append((idx, s, a, pos, tok, normalize_word(tok)))
             idx += 1
     con.executemany("INSERT INTO word VALUES (?,?,?,?,?,?)", words)

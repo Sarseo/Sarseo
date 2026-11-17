@@ -46,3 +46,9 @@ def test_analyse_with_wrong_word(q):
     assert rep.span == "112:1–112:4"
     wrong = [m for m in rep.mistakes() if m.kind == "sub"]
     assert len(wrong) == 1 and wrong[0].expected.norm == "احد"
+
+
+def test_basmala_not_part_of_aya_1(q):
+    assert [w.norm for w in q.span(112, 1)] == ["قل", "هو", "الله", "احد"]
+    assert q.span(1, 1)[0].norm == "بسم"          # al-Fatiha: Basmala is aya 1
+    assert q.span(9, 1)[0].norm != "بسم"          # at-Tawba: no Basmala

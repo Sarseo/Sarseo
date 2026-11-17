@@ -15,6 +15,10 @@ python3 -m venv .venv
 # Audio prüfen (lädt beim ersten Mal tarteel-ai/whisper-base-ar-quran)
 .venv/bin/python -m engine.cli check aufnahme.m4a [--sura 1 --from 1 --to 7] [--json]
 
+# HTTP-API (Anbindung an Darajaat, siehe docs/DARAJAAT.md)
+.venv/bin/pip install fastapi uvicorn python-multipart
+.venv/bin/uvicorn server.app:app --port 8000
+
 # Evaluierung mit EveryAyah-Aufnahmen
 .venv/bin/python -m engine.cli eval --n 20 [--reciter Alafasy_128kbps]
 .venv/bin/python -m pytest -q
@@ -30,6 +34,7 @@ python3 -m venv .venv
 | `engine/align.py` | Stelle im Quran finden (n-Gramm-Voting + Fuzzy-Diff), Wort-Diff |
 | `engine/report.py` | Fehlerbericht (Text / JSON für App-Anbindung) |
 | `engine/evaluate.py` | WER + Trefferquote der Stellensuche |
+| `server/app.py` | HTTP-API für Darajaat |
 
 ### Erste Messung (15 zufällige Ayat, Alafasy, CPU, whisper-base)
 
