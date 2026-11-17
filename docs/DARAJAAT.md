@@ -1,16 +1,26 @@
 # Anbindung an Darajaat (app.darajaat.de)
 
-## Ist-Stand Darajaat (geprüft am 2026-11-17)
+## Architektur Darajaat (Stand 2026-11-17, laut Betreiber)
 
-- Eigener Server hinter Caddy; `rk-shim.js` ersetzt die Claude-Artifact-APIs (`/api/db`, `/api/me`, `/api/auth`, `/api/assets`).
-- Rezitation ist schon da: `POST /api/asr` (WAV, Header `x-model: quran` bzw. `x-prompt`), Live-Modus über WebSocket `/api/live`.
-- Bewertungs-Pipeline für Admins: `/api/admin/learn` (gespeicherte Aufnahmen), `/judge` mit Fehlertypen **miss / sub / vowel / near** → das sind gelabelte Trainingsdaten.
+| Teil | Technik |
+|---|---|
+| Frontend | Vanilla HTML/CSS/JS, Updates als nachgeladene Bundles (`nd65`, `nd66`, …); Hafs-Mushaf seitenweise mit Mushaf-Schriften, andere Riwayat als zeilenweise geschnittene Seitenbilder |
+| Server | Node.js in Docker auf Hetzner (DE), SQLite (Konten, Fortschritt, Tests, Majalis, Rezitations-Indizes), Dateien auf Datenvolumen, Altdaten in Storage Box |
+| Audio | Python + ffmpeg: Rezitation je Qāriʾ in 604 Seiten (AAC 96k) mit Ayah-Startzeiten |
+| Tasmīʿ | **eigenes Wav2Vec2-CTC-Modell** (PyTorch, GPU auf RunPod), Live über WebSocket (`/api/live`): Wortverfolgung, Fehler und Ḥarakāt; langsamere Fallback-Engine; das Modell richtet auch die Qurrāʾ-Aufnahmen aus |
+| Bewertung | Admin-Oberfläche `/api/admin/learn` + `/judge`: Fehlertypen miss / sub / vowel / near |
+| Sonstiges | Push über ntfy; Domain bei cPanel-Anbieter → Hetzner |
 
-Sarseo ergänzt das also nicht als zweite App, sondern als **Engine hinter `/api/asr` / `/api/live`**: Quran-weite Stellensuche, Wort-Diff, Evaluierung und später Feinabstimmung auf den bewerteten Darajaat-Aufnahmen.
+## Konsequenz für Sarseo
 
-Darajaat ist eine arabische Lernplattform (Ansichten: Schüler / Betreuer / wissenschaftlicher Prüfer; Quiz, Zertifikate). Sarseo liefert ihr ein **Tilāwa-/Hifẓ-Modul**: Rezitation prüfen, Fehler pro Wort, Fortschritt als Darajaat-Stufen.
+Darajaat ist bei der Erkennung weiter als der Sarseo-Prototyp (CTC auf Zeichenebene erkennt Ḥarakāt, Whisper nicht; Live-Streaming existiert). Sarseo baut deshalb **keine zweite Erkennung**, sondern das, was fehlt:
 
-## Schnittstelle (fertig, `server/app.py`)
+1. **Messung:** Benchmark des Darajaat-Modells auf den bewerteten Aufnahmen (Wortfehler, Ḥaraka-Fehler, Fehlalarme pro Fehlertyp, getrennt nach Alter/Niveau). Ohne Zahlen keine gezielte Verbesserung.
+2. **Datenkreislauf:** Export der `judge`-Urteile → Trainingsset → periodisches Feintuning des Wav2Vec2-Modells → Vergleich gegen festes Testset, erst dann Deployment.
+3. **Funktionen aus dem Plan, die noch fehlen:** Mutashābihāt-Trainer, Spaced Repetition pro Ayah, Lehrer-/Elternberichte.
+4. Die vorhandene Quran-weite Stellensuche und der Wort-Diff (`engine/align.py`) können als Prüfwerkzeug und für die Mutashābihāt dienen.
+
+## Sarseo-Schnittstelle (Prototyp, `server/app.py`)
 
 | Endpoint | Eingabe | Ausgabe |
 |---|---|---|
