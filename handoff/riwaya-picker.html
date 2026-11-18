@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>اختيار الرواية والقارئ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Riwaya picker — vanilla HTML/CSS/JS, no framework. All classes prefixed rp- ===== */
+.rp-root{--rp-accent:#5b5a1e;--rp-bg:#fbf6ea;--rp-soft:#f3ecd8;--rp-soft2:#efe6cd;--rp-line:#e4dbc2;--rp-ink:#2e2a1f;--rp-muted:#6b6250;
+  position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;justify-content:flex-end;font-family:"Noto Naskh Arabic",serif;color:var(--rp-ink);direction:rtl}
+.rp-root[hidden]{display:none}
+.rp-backdrop{position:absolute;inset:0;background:rgba(46,42,31,.32);border:0;padding:0}
+.rp-sheet{position:relative;height:calc(100% - 28px);max-width:560px;width:100%;margin:0 auto;background:var(--rp-bg);border-radius:26px 26px 0 0;box-shadow:0 -10px 30px rgba(46,42,31,.22);display:flex;flex-direction:column;gap:10px;padding:10px 0 calc(14px + env(safe-area-inset-bottom,0px));box-sizing:border-box;overflow:hidden}
+.rp-grip{align-self:center;width:44px;height:5px;border-radius:3px;background:#d6ccb0}
+.rp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px}
+.rp-head h1{margin:0;font-size:22px;font-weight:700}
+.rp-ib{width:44px;height:44px;flex-shrink:0;border-radius:22px;border:1px solid var(--rp-line);background:var(--rp-soft);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.rp-search{margin:0 16px;display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:16px;background:#fff;border:1px solid var(--rp-line)}
+.rp-search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;color:var(--rp-ink);outline:none}
+.rp-search input::placeholder{color:#7d7360}
+.rp-x{width:32px;height:32px;border-radius:16px;border:0;background:var(--rp-soft2);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.rp-recent{display:flex;gap:8px;overflow-x:auto;padding:0 16px 2px;align-items:center}
+.rp-recent>span{flex-shrink:0;font-size:12px;color:var(--rp-muted)}
+.rp-chip{flex-shrink:0;min-height:40px;padding:4px 14px;border-radius:20px;font:inherit;font-size:14px;white-space:nowrap;cursor:pointer;background:#fff;color:var(--rp-ink);border:1px solid var(--rp-line)}
+.rp-chip[aria-pressed=true],.rp-on{background:var(--rp-accent)!important;color:#fff!important;border-color:var(--rp-accent)!important}
+.rp-body{display:flex;gap:8px;min-height:0;flex:1;padding:0 16px}
+.rp-col{display:flex;flex-direction:column;gap:6px;min-height:0}
+.rp-col h2{margin:0;font-size:13px;font-weight:600;color:var(--rp-muted)}
+.rp-col.rw{width:138px;flex-shrink:0}
+.rp-col.q{flex:1;min-width:0}
+.rp-sep{width:1px;background:var(--rp-line);margin:26px 0 10px}
+.rp-scroll{display:flex;flex-direction:column;gap:6px;overflow-y:auto;min-height:0;flex:1;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+.rp-scroll.rw{gap:10px}
+.rp-group{flex-shrink:0;display:flex;flex-direction:column;gap:4px;padding:6px;border-radius:16px;background:var(--rp-soft);border:1px solid var(--rp-line)}
+.rp-group.cur{border-color:var(--rp-accent)}
+.rp-group>span{font-size:12px;font-weight:600;color:var(--rp-muted);padding:0 4px;line-height:1.5}
+.rp-rw{min-height:52px;padding:4px 12px;border-radius:12px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:right;font:inherit;cursor:pointer;background:#fff;color:var(--rp-ink);border:1px solid var(--rp-line)}
+.rp-rw b{font-size:16px;line-height:1.4}.rp-rw small{font-size:11px;opacity:.85}
+.rp-rw.rp-on{box-shadow:0 3px 10px rgba(46,42,31,.2)}
+.rp-qh{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.rp-qh span{font-size:12px;color:var(--rp-muted)}
+.rp-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;padding:3px;border-radius:12px;background:var(--rp-soft2)}
+.rp-seg button{min-height:40px;border-radius:9px;border:0;font:inherit;font-size:13px;font-weight:600;background:transparent;color:var(--rp-ink);cursor:pointer}
+.rp-row{flex-shrink:0;display:flex;align-items:center;border-radius:14px;background:#fff;color:var(--rp-ink);border:1px solid var(--rp-line)}
+.rp-row>button:first-child{flex:1;min-width:0;min-height:52px;display:flex;align-items:center;gap:8px;padding:4px 10px;border:0;background:transparent;color:inherit;text-align:right;font:inherit;cursor:pointer}
+.rp-dot{flex-shrink:0;width:34px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:var(--rp-soft2);color:#4a4434}
+.rp-on .rp-dot,.rp-on .rp-play{background:rgba(255,255,255,.22);color:#fff}
+.rp-name{flex:1;min-width:0;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-play{flex-shrink:0;width:44px;height:44px;margin-left:4px;border-radius:22px;border:0;display:flex;align-items:center;justify-content:center;padding:0;background:var(--rp-soft2);color:#4a4434;cursor:pointer}
+.rp-hits{display:flex;flex-direction:column;gap:6px;min-height:0;flex:1}
+.rp-hits .rp-qh{padding:0 16px}
+.rp-hits .rp-scroll{padding:0 16px 10px}
+.rp-hit{flex-shrink:0;min-height:60px;display:flex;align-items:center;gap:12px;padding:6px 14px;border-radius:16px;text-align:right;font:inherit;cursor:pointer;background:#fff;color:var(--rp-ink);border:1px solid var(--rp-line)}
+.rp-hit b{display:block;font-size:16px}.rp-hit small{font-size:12px;opacity:.82}
+.rp-empty{margin:20px 0;text-align:center;font-size:15px;color:var(--rp-muted)}
+.rp-foot{padding:8px 16px 0;border-top:1px solid var(--rp-line);display:flex;flex-direction:column;gap:8px}
+.rp-infos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rp-infos button{min-height:44px;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:12px;border:1px solid var(--rp-line);background:var(--rp-soft);color:var(--rp-ink);font:inherit;font-size:13px;text-align:right;min-width:0;cursor:pointer}
+.rp-infos span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-cta{width:100%;height:60px;border-radius:18px;border:0;background:var(--rp-accent);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 18px;box-shadow:0 4px 14px rgba(46,42,31,.2);font:inherit;cursor:pointer}
+.rp-cta>span{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.rp-cta b{font-size:17px}.rp-cta small{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.rp-info{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end}
+.rp-info[hidden]{display:none}
+.rp-info>.rp-backdrop{position:absolute;inset:0;background:rgba(46,42,31,.35)}
+.rp-card-sheet{position:relative;max-height:78%;overflow-y:auto;background:var(--rp-bg);border-radius:22px 22px 0 0;padding:10px 18px 20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -8px 24px rgba(46,42,31,.25)}
+.rp-card-sheet h2{margin:0;font-size:21px}
+.rp-card{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid var(--rp-line)}
+.rp-card>span{font-size:12px;font-weight:600;color:var(--rp-muted)}
+.rp-card>b{font-size:18px;line-height:1.5}
+.rp-fact{display:flex;justify-content:space-between;gap:10px;font-size:14px;border-top:1px solid var(--rp-soft2);padding-top:4px}
+.rp-fact span:first-child{color:var(--rp-muted)}
+.rp-fact span:last-child{text-align:left;font-weight:600}
+.rp-fact .todo{color:#8a7a52;font-style:italic;font-weight:400}
+.rp-other{display:flex;gap:6px;flex-wrap:wrap}
+.rp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.rp-root button:focus-visible,.rp-root input:focus-visible{outline:3px solid #b8892a;outline-offset:2px}
+</style>
+</head>
+<body style="margin:0;background:#e9e2cf">
+
+<!-- Demo only: in your app, call RiwayaPicker.open(...) from your own button. -->
+<p style="font-family:'Noto Naskh Arabic',serif;padding:20px" dir="rtl"><button id="demo" style="font:inherit;font-size:18px;padding:10px 18px">افتح اختيار الرواية</button> <span id="demo-out"></span></p>
+
+<script>
+/* ======================================================================
+   RiwayaPicker — شاشة اختيار الرواية والقارئ (نسخة «هـ»).
+   Usage:
+     RiwayaPicker.open({
+       current: {rawi:'حفص', imam:'عاصم', path:'الشاطبية', qari:'العفاسي'},  // optional
+       onPick(sel){ ... },      // sel = {rawi, imam, path, qari}
+       onPlay(sel, playing){ },  // optional: play/stop a short sample
+       accent: '#5b5a1e'         // optional
+     });
+   DATA below is the sample from the design: replace it with the app's real
+   riwayat/reciters index. Imam/rawi dates should be reviewed before release.
+   ====================================================================== */
+(function () {
+  const S = 'الشاطبية', D = 'الدرّة', M = 'المعصراوي';
+  // Grouped by imam (members of a group stay together), Hafs first.
+  const RW = [
+    { n: 'حفص', im: 'عاصم', p: [{ n: S, q: ['الحصري', 'المنشاوي', 'عبد الباسط', 'العفاسي', 'الغامدي', 'المعيقلي', 'الدوسري', 'الشريم', 'الحذيفي', 'بليلة', 'البنا', 'خياط', 'أيوب', 'العجمي', 'عبد الحكم', 'ديبان', M] }] },
+    { n: 'شعبة', im: 'عاصم', p: [{ n: S, q: ['الحذيفي', 'العفاسي', 'ديبان', M] }] },
+    { n: 'ورش', im: 'نافع', p: [{ n: 'الأزرق', q: ['الحصري', 'القزابري', 'الكوشي', 'ياسين', 'عبد الباسط', 'سايد', 'الدوسري', 'بنكيران', 'غربي', 'بلعالية', 'ديبان', M] }, { n: 'الأصبهاني', q: ['عبد الكريم'] }] },
+    { n: 'قالون', im: 'نافع', p: [{ n: 'أبي نشيط', q: ['الحصري', 'الحذيفي', 'الدوكالي', 'الطرابلسي', 'دعوب', 'العكري', 'ديبان', 'أبو سنينة', 'قنيوة', 'كشيدان', 'صابر عبد الحكم', 'النائحي', M] }] },
+    { n: 'الدوري', im: 'أبي عمرو', p: [{ n: S, q: ['الحصري', 'السلطني', 'نورين', 'الزبير', 'ديبان', 'صابر عبد الحكم', M] }] },
+    { n: 'السوسي', im: 'أبي عمرو', p: [{ n: S, q: ['صوفي', M] }] },
+    { n: 'البزي', im: 'ابن كثير', p: [{ n: S, q: ['كميني', 'ديبان', M] }] },
+    { n: 'قنبل', im: 'ابن كثير', p: [{ n: S, q: ['ديبان', M] }] },
+    { n: 'هشام', im: 'ابن عامر', p: [{ n: S, q: [M] }] },
+    { n: 'ابن ذكوان', im: 'ابن عامر', p: [{ n: S, q: ['العفاسي', 'السلطني', M] }] },
+    { n: 'خلف', im: 'حمزة', p: [{ n: S, q: ['صوفي', M] }] },
+    { n: 'خلّاد', im: 'حمزة', p: [{ n: S, q: [M] }] },
+    { n: 'أبو الحارث', im: 'الكسائي', p: [{ n: S, q: [M] }] },
+    { n: 'الدوري', im: 'الكسائي', p: [{ n: S, q: ['العفاسي', 'العبد الله', 'السلطني', 'الشيمي', M] }] },
+    { n: 'ابن وردان', im: 'أبي جعفر', p: [{ n: D, q: [M] }] },
+    { n: 'ابن جمّاز', im: 'أبي جعفر', p: [{ n: D, q: [M] }] },
+    { n: 'رويس', im: 'يعقوب', p: [{ n: D, q: [M] }] },
+    { n: 'روح', im: 'يعقوب', p: [{ n: D, q: [M] }] },
+    { n: 'إسحاق', im: 'خلف العاشر', p: [{ n: D, q: ['السلطني'] }] },
+    { n: 'إدريس', im: 'خلف العاشر', p: [{ n: D, q: [M] }] }
+  ];
+  // [full name, city, death AH] — review before release.
+  const IMAM = {
+    'عاصم': ['عاصم بن أبي النجود الأسدي', 'الكوفة', 127], 'نافع': ['نافع بن عبد الرحمن بن أبي نعيم', 'المدينة', 169],
+    'أبي عمرو': ['أبو عمرو زبّان بن العلاء', 'البصرة', 154], 'ابن كثير': ['عبد الله بن كثير الداري', 'مكة', 120],
+    'ابن عامر': ['عبد الله بن عامر اليحصبي', 'دمشق', 118], 'حمزة': ['حمزة بن حبيب الزيّات', 'الكوفة', 156],
+    'الكسائي': ['علي بن حمزة الكسائي', 'الكوفة', 189], 'أبي جعفر': ['يزيد بن القعقاع', 'المدينة', 130],
+    'يعقوب': ['يعقوب بن إسحاق الحضرمي', 'البصرة', 205], 'خلف العاشر': ['خلف بن هشام البزّار', 'بغداد', 229]
+  };
+  const RAWI = {
+    'حفص': ['حفص بن سليمان الأسدي', 'الكوفة', 180], 'ورش': ['عثمان بن سعيد المصري', 'مصر', 197],
+    'قالون': ['عيسى بن مينا', 'المدينة', 220], 'الدوري': ['حفص بن عمر الدوري', 'بغداد', 246],
+    'شعبة': ['شعبة بن عيّاش، أبو بكر', 'الكوفة', 193], 'السوسي': ['صالح بن زياد السوسي', 'الرقّة', 261],
+    'البزي': ['أحمد بن محمد البزّي', 'مكة', 250], 'قنبل': ['محمد بن عبد الرحمن المخزومي', 'مكة', 291],
+    'هشام': ['هشام بن عمّار', 'دمشق', 245], 'ابن ذكوان': ['عبد الله بن أحمد بن ذكوان', 'دمشق', 242],
+    'خلف': ['خلف بن هشام البزّار', 'بغداد', 229], 'خلّاد': ['خلّاد بن خالد الصيرفي', 'الكوفة', 220],
+    'أبو الحارث': ['الليث بن خالد البغدادي', 'بغداد', 240], 'ابن وردان': ['عيسى بن وردان', 'المدينة', 160],
+    'ابن جمّاز': ['سليمان بن مسلم بن جمّاز', 'المدينة', 170], 'رويس': ['محمد بن المتوكّل اللؤلؤي', 'البصرة', 238],
+    'روح': ['روح بن عبد المؤمن', 'البصرة', 234], 'إسحاق': ['إسحاق بن إبراهيم الورّاق', 'بغداد', 286],
+    'إدريس': ['إدريس بن عبد الكريم الحدّاد', 'بغداد', 292]
+  };
+
+  const ar = (n) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
+  const qn = (k) => k === 1 ? 'قارئ واحد' : k === 2 ? 'قارئان' : ar(k) + (k <= 10 ? ' قرّاء' : ' قارئاً');
+  const ini = (n) => n.replace(/^(ال|أبو |ابن |عبد )/, '').charAt(0);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const label = (r, p) => r.n + ' عن ' + r.im + (r.p.length > 1 ? ' · ' + p.n : '');
+  const total = (r) => r.p.reduce((s, x) => s + x.q.length, 0);
+  const ICON = {
+    close: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5b5a1e" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    search: '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b6250" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+    x: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a4434" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    play: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+    info: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5b5a1e" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>',
+    go: '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'
+  };
+  const store = {
+    get() { try { return JSON.parse(localStorage.getItem('rp-recent') || '[]'); } catch (e) { return []; } },
+    set(v) { try { localStorage.setItem('rp-recent', JSON.stringify(v.slice(0, 5))); } catch (e) {} }
+  };
+
+  let root, st, opts, lastFocus;
+
+  function find(cur) {
+    if (!cur) return { rw: 0, path: 0, q: 0 };
+    const ri = Math.max(0, RW.findIndex((r) => r.n === cur.rawi && (!cur.imam || r.im === cur.imam)));
+    const pi = Math.max(0, RW[ri].p.findIndex((p) => p.n === cur.path));
+    const qi = Math.max(0, RW[ri].p[pi].q.indexOf(cur.qari));
+    return { rw: ri, path: pi, q: qi };
+  }
+  function sel() {
+    const r = RW[st.rw], p = r.p[Math.min(st.path, r.p.length - 1)];
+    return { r, p, q: p.q[Math.min(st.q, p.q.length - 1)] };
+  }
+
+  function render() {
+    const { r: rw, p: pa, q: qr } = sel();
+    const f = st.qq.trim();
+    const recent = store.get().map(find).filter((x, i, a) => a.findIndex((y) => y.rw === x.rw && y.path === x.path && y.q === x.q) === i);
+    let h = '<button class="rp-backdrop" data-a="close" aria-label="إغلاق"></button>' +
+      '<section class="rp-sheet" role="dialog" aria-modal="true" aria-label="اختيار الرواية والقارئ"><div class="rp-grip" aria-hidden="true"></div>' +
+      '<div class="rp-head"><h1>التلاوة</h1><button class="rp-ib" data-a="close" aria-label="إغلاق">' + ICON.close + '</button></div>' +
+      '<label for="rp-find" class="rp-sr">ابحث عن قارئ أو رواية</label><div class="rp-search">' + ICON.search +
+      '<input id="rp-find" type="search" placeholder="ابحث: الحصري، ورش، قالون…" value="' + esc(st.qq) + '">' +
+      (f ? '<button class="rp-x" data-a="clear" aria-label="مسح البحث">' + ICON.x + '</button>' : '') + '</div>';
+
+    if (!f) {
+      if (recent.length) {
+        h += '<div class="rp-recent"><span>الأخيرة:</span>' + recent.map((x) => {
+          const r = RW[x.rw], p = r.p[x.path], on = x.rw === st.rw && x.path === st.path && p.q[x.q] === qr;
+          return '<button class="rp-chip" aria-pressed="' + on + '" data-a="set" data-rw="' + x.rw + '" data-path="' + x.path + '" data-q="' + x.q + '">' + esc(p.q[x.q] + ' · ' + r.n) + '</button>';
+        }).join('') + '</div>';
+      }
+      // riwayat grouped by imam
+      let groups = '', gim = null;
+      RW.forEach((r, i) => {
+        if (r.im !== gim) { if (gim !== null) groups += '</div>'; gim = r.im;
+          groups += '<div class="rp-group' + (r.im === rw.im ? ' cur' : '') + '" role="group" aria-label="عن ' + esc(r.im) + '"><span>عن ' + esc(r.im) + '</span>'; }
+        groups += '<button class="rp-rw' + (i === st.rw ? ' rp-on' : '') + '" aria-pressed="' + (i === st.rw) + '" data-a="rw" data-i="' + i + '"><b>' + esc(r.n) + '</b><small>' + qn(total(r)) + '</small></button>';
+      });
+      groups += '</div>';
+      h += '<div class="rp-body"><div class="rp-col rw"><h2>الرواية</h2><div class="rp-scroll rw">' + groups + '</div></div><div class="rp-sep" aria-hidden="true"></div>' +
+        '<div class="rp-col q"><div class="rp-qh"><h2>القارئ</h2><span>' + qn(pa.q.length) + '</span></div>';
+      if (rw.p.length > 1) h += '<div class="rp-seg" role="group" aria-label="الطريق">' + rw.p.map((p, i) =>
+        '<button class="' + (p === pa ? 'rp-on' : '') + '" aria-pressed="' + (p === pa) + '" data-a="path" data-i="' + i + '">' + esc(p.n) + '</button>').join('') + '</div>';
+      h += '<div class="rp-scroll">' + pa.q.map((n, i) => {
+        const on = n === qr, key = st.rw + '.' + st.path + '.' + i, pl = st.playing === key;
+        return '<div class="rp-row' + (on ? ' rp-on' : '') + '"><button aria-pressed="' + on + '" data-a="q" data-i="' + i + '"><span class="rp-dot" aria-hidden="true">' + esc(ini(n)) + '</span><span class="rp-name">' + esc(n) + '</span></button>' +
+          '<button class="rp-play" aria-pressed="' + pl + '" aria-label="' + (pl ? 'إيقاف ' : 'استمع إلى ') + esc(n) + '" data-a="play" data-key="' + key + '">' + (pl ? ICON.pause : ICON.play) + '</button></div>';
+      }).join('') + '</div></div></div>';
+    } else {
+      const hits = [];
+      RW.forEach((r, ri) => r.p.forEach((p, pi) => {
+        const hitR = (r.n + ' ' + r.im + ' ' + p.n).includes(f);
+        p.q.forEach((n, i) => { if (hitR || n.includes(f)) hits.push({ r, p, n, ri, pi, i }); });
+      }));
+      h += '<div class="rp-hits"><div class="rp-qh"><h2 style="margin:0;font-size:13px;color:var(--rp-muted)">نتائج البحث</h2><span>' + ar(hits.length) + ' نتيجة</span></div><div class="rp-scroll">' +
+        (hits.length ? hits.map((x) => {
+          const on = x.ri === st.rw && x.pi === st.path && x.n === qr;
+          return '<button class="rp-hit' + (on ? ' rp-on' : '') + '" aria-pressed="' + on + '" data-a="set" data-rw="' + x.ri + '" data-path="' + x.pi + '" data-q="' + x.i + '"><span class="rp-dot" aria-hidden="true">' + esc(ini(x.n)) + '</span><span><b>' + esc(x.n) + '</b><small>رواية ' + esc(label(x.r, x.p)) + '</small></span></button>';
+        }).join('') : '<p class="rp-empty">لا نتائج. جرّب اسمًا آخر أو اسم الرواية.</p>') + '</div></div>';
+    }
+
+    h += '<div class="rp-foot"><div class="rp-infos"><button data-a="info" data-k="rw">' + ICON.info + '<span>عن رواية ' + esc(rw.n) + '</span></button>' +
+      '<button data-a="info" data-k="q">' + ICON.info + '<span>عن القارئ ' + esc(qr) + '</span></button></div>' +
+      '<button class="rp-cta" data-a="go"><span><b>ابدأ التلاوة</b><small>' + esc(qr + ' · رواية ' + label(rw, pa)) + '</small></span>' + ICON.go + '</button></div>';
+    h += infoSheet(rw, pa, qr) + '</section>';
+
+    const had = document.activeElement && document.activeElement.id === 'rp-find';
+    root.innerHTML = h;
+    if (had) { const i = root.querySelector('#rp-find'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+  }
+
+  function infoSheet(rw, pa, qr) {
+    if (!st.info) return '';
+    const fact = (k, v, todo) => '<div class="rp-fact"><span>' + k + '</span><span' + (todo ? ' class="todo"' : '') + '>' + esc(v) + '</span></div>';
+    const card = (h, name, facts) => '<div class="rp-card"><span>' + h + '</span><b>' + esc(name) + '</b>' + facts + '</div>';
+    let kicker, title, body = '', other = '', otherT = '';
+    if (st.info === 'rw') {
+      const R = RAWI[rw.n], I = IMAM[rw.im];
+      kicker = 'عن الرواية'; title = 'رواية ' + rw.n + ' عن ' + rw.im;
+      body = card('الراوي', R[0], fact('الوفاة', ar(R[2]) + ' هـ') + fact('البلد', R[1])) +
+        card('صاحب القراءة (الإمام)', I[0], fact('الوفاة', ar(I[2]) + ' هـ') + fact('البلد', I[1])) +
+        card('الطريق', pa.n, fact('القرّاء في التطبيق', qn(pa.q.length)));
+      otherT = 'الرواية الأخرى عن ' + rw.im;
+      RW.forEach((x, i) => { if (x.im === rw.im && x !== rw) other += '<button class="rp-chip" data-a="rwinfo" data-i="' + i + '">رواية ' + esc(x.n) + '</button>'; });
+    } else {
+      kicker = 'عن القارئ'; title = qr;
+      const t = '[من بيانات درجات]';
+      body = card('القارئ', '[الاسم الكامل]', fact('البلد', t, 1) + fact('الولادة والوفاة', t, 1) + fact('نوع التلاوة', t, 1) + fact('السرعة', t, 1) + fact('المتوفّر', t, 1));
+      otherT = 'روايات أخرى بصوت ' + qr + ' في التطبيق';
+      RW.forEach((r, ri) => r.p.forEach((p, pi) => { const qx = p.q.indexOf(qr);
+        if (qx >= 0) { const on = ri === st.rw && pi === st.path;
+          other += '<button class="rp-chip" aria-pressed="' + on + '" data-a="set" data-close="1" data-rw="' + ri + '" data-path="' + pi + '" data-q="' + qx + '">' + esc(label(r, p)) + '</button>'; } }));
+    }
+    return '<div class="rp-info"><button class="rp-backdrop" data-a="noinfo" aria-label="إغلاق المعلومات"></button>' +
+      '<div class="rp-card-sheet" role="dialog" aria-label="' + esc(title) + '"><div class="rp-grip" aria-hidden="true"></div>' +
+      '<div class="rp-head" style="padding:0"><div><small style="color:var(--rp-muted)">' + kicker + '</small><h2>' + esc(title) + '</h2></div><button class="rp-ib" data-a="noinfo" aria-label="إغلاق">' + ICON.close + '</button></div>' +
+      body + (other ? '<div><small style="color:var(--rp-muted);font-weight:600">' + esc(otherT) + '</small><div class="rp-other">' + other + '</div></div>' : '') + '</div></div>';
+  }
+
+  function current() { const { r, p, q } = sel(); return { rawi: r.n, imam: r.im, path: p.n, qari: q }; }
+  function stopPlay() { if (st.playing && opts.onPlay) opts.onPlay(current(), false); st.playing = ''; }
+
+  function onClick(e) {
+    const b = e.target.closest('[data-a]'); if (!b || !root.contains(b)) return;
+    const a = b.dataset.a, i = +b.dataset.i;
+    if (a === 'close') return close();
+    if (a === 'clear') { st.qq = ''; }
+    if (a === 'rw') { stopPlay(); st.rw = i; st.path = 0; st.q = 0; }
+    if (a === 'path') { stopPlay(); st.path = i; st.q = 0; }
+    if (a === 'q') { st.q = i; }
+    if (a === 'set') { stopPlay(); st.rw = +b.dataset.rw; st.path = +b.dataset.path; st.q = +b.dataset.q; st.qq = ''; if (b.dataset.close) st.info = ''; }
+    if (a === 'play') {
+      const k = b.dataset.key, was = st.playing === k; stopPlay();
+      if (!was) { const [r, p, q] = k.split('.').map(Number); st.playing = k;
+        if (opts.onPlay) opts.onPlay({ rawi: RW[r].n, imam: RW[r].im, path: RW[r].p[p].n, qari: RW[r].p[p].q[q] }, true); }
+    }
+    if (a === 'info') st.info = b.dataset.k;
+    if (a === 'noinfo') st.info = '';
+    if (a === 'rwinfo') { st.rw = i; st.path = 0; st.q = 0; }
+    if (a === 'go') {
+      const c = current(); stopPlay();
+      store.set([{ rawi: c.rawi, imam: c.imam, path: c.path, qari: c.qari }].concat(store.get().filter((x) => !(x.rawi === c.rawi && x.imam === c.imam && x.path === c.path && x.qari === c.qari))));
+      close(); if (opts.onPick) opts.onPick(c); return;
+    }
+    render();
+  }
+  function onInput(e) { if (e.target.id === 'rp-find') { st.qq = e.target.value; render(); } }
+  function onKey(e) { if (e.key === 'Escape') { if (st.info) { st.info = ''; render(); } else close(); } }
+
+  function open(o) {
+    opts = o || {}; lastFocus = document.activeElement;
+    st = Object.assign({ qq: '', playing: '', info: '' }, find(opts.current));
+    if (!root) {
+      root = document.createElement('div'); root.className = 'rp-root';
+      root.addEventListener('click', onClick); root.addEventListener('input', onInput); root.addEventListener('keydown', onKey);
+      document.body.appendChild(root);
+    }
+    if (opts.accent) root.style.setProperty('--rp-accent', opts.accent);
+    root.hidden = false; render();
+    const c = root.querySelector('.rp-rw.rp-on'); if (c) c.scrollIntoView({ block: 'nearest' });
+    root.querySelector('.rp-ib').focus();
+  }
+  function close() { stopPlay(); if (root) root.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+
+  window.RiwayaPicker = { open, close, data: { RW, IMAM, RAWI } };
+})();
+
+/* Demo wiring */
+document.getElementById('demo').onclick = () => RiwayaPicker.open({
+  current: { rawi: 'حفص', imam: 'عاصم', path: 'الشاطبية', qari: 'العفاسي' },
+  onPick: (s) => { document.getElementById('demo-out').textContent = 'اخترت: ' + s.qari + ' · رواية ' + s.rawi + ' عن ' + s.imam + ' · ' + s.path; },
+  onPlay: (s, on) => console.log(on ? 'play' : 'stop', s)
+});
+</script>
+</body>
+</html>
