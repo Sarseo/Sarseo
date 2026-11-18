@@ -45,6 +45,10 @@ def main(argv=None) -> int:
     p.add_argument("--n", type=int, default=20)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--model")
+    p = sub.add_parser("bench"); p.add_argument("file")
+    p.add_argument("--text", action="store_true", help="score the transcript in each line, no ASR")
+    p.add_argument("--pred", help="JSONL of your own model's output, line-for-line with the cases")
+    p.add_argument("--model")
     a = ap.parse_args(argv)
 
     if a.cmd == "build-db":
@@ -53,6 +57,9 @@ def main(argv=None) -> int:
     if a.cmd == "eval":
         from .evaluate import run
         return run(a.reciter, a.n, a.seed, a.model)
+    if a.cmd == "bench":
+        from .benchmark import run as bench_run
+        return bench_run(a.file, a.text, a.pred, a.model)
 
     q = Quran()
     if a.cmd == "check":
